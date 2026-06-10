@@ -15,7 +15,6 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <h2 class="h5">{{ habit.name }}</h2>
-
                 <p class="text-secondary mb-2">
                     Frecuencia: {{ habit.get_frequency_display }}
                     {% if habit.is_active %}
@@ -36,7 +35,6 @@
                     {% else %}
                     <span class="badge text-bg-warning">Pendiente {{ habit.period_label }}</span>
                     {% endif %}
-
                     <span class="badge text-bg-primary">Racha actual: {{ habit.current_streak }}</span>
                     <span class="badge text-bg-dark">Racha maxima: {{ habit.max_streak }}</span>
                 </div>
@@ -51,7 +49,8 @@
                 </form>
                 {% endif %}
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'habit_history' habit.pk %}" class="btn btn-sm btn-outline-secondary">Historial</a>
                     <a href="{% url 'habit_update' habit.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
                     <a href="{% url 'habit_delete' habit.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
                 </div>

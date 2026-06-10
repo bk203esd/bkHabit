@@ -301,3 +301,132 @@ class HabitTrackingTests(TestCase):
         response = self.client.post(
             reverse("habit_toggle_checkin", args=[foreign_habit.pk]))
         self.assertEqual(response.status_code, 404)
+
+
+class HabitHistoryCalendarTests(TestCase):
+    def setUp(self):
+        self.password = "HistoryPass123!"
+        self.user = get_user_model().objects.create_user(
+            username="history_user",
+            password=self.password,
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username="history_other",
+            password=self.password,
+        )
+
+    def login_user(self):
+        self.client.login(username="history_user", password=self.password)
+
+    def test_history_requires_authentication(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Sin login",
+            frequency=Habit.Frequency.DAILY,
+        )
+        response = self.client.get(reverse("habit_history", args=[habit.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
+    def test_history_forbidden_for_other_user_habit(self):
+        foreign_habit = Habit.objects.create(
+            owner=self.other_user,
+            name="Ajeno",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+        response = self.client.get(
+            reverse("habit_history", args=[foreign_habit.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_history_defaults_to_current_month(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Default mes",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+        response = self.client.get(reverse("habit_history", args=[habit.pk]))
+        today = timezone.localdate()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["current_year"], today.year)
+        self.assertEqual(response.context["current_month"], today.month)
+
+    def test_history_accepts_valid_year_month_query(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Query valida",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+        response = self.client.get(
+            reverse("habit_history", args=[habit.pk]),
+            {"year": 2026, "month": 5},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["current_year"], 2026)
+        self.assertEqual(response.context["current_month"], 5)
+
+    def test_history_invalid_query_fallbacks_to_current_month(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Query invalida",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+        response = self.client.get(
+            reverse("habit_history", args=[habit.pk]),
+            {"year": "abc", "month": 99},
+        )
+        today = timezone.localdate()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["current_year"], today.year)
+        self.assertEqual(response.context["current_month"], today.month)
+
+    def test_weekly_habit_marks_monday_only(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Semanal lunes",
+            frequency=Habit.Frequency.WEEKLY,
+        )
+        self.login_user()
+
+        today = timezone.localdate()
+        monday = today - timedelta(days=today.weekday())
+        habit.register_checkin(monday)
+
+        response = self.client.get(
+            reverse("habit_history", args=[habit.pk]),
+            {"year": monday.year, "month": monday.month},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        completed_days = []
+        for week in response.context["weeks"]:
+            for day in week:
+                if not day["is_outside"] and day["is_completed"]:
+                    completed_days.append(day["date_obj"].weekday())
+
+        self.assertTrue(completed_days)
+        self.assertTrue(all(wd == 0 for wd in completed_days))
+
+    def test_history_template_used(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Template",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+        response = self.client.get(reverse("habit_history", args=[habit.pk]))
+        self.assertTemplateUsed(response, "habits/history.html")
+
+    def test_history_route_contract(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Route contract",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.assertEqual(
+            reverse("habit_history", args=[habit.pk]),
+            f"/habits/{habit.pk}/history/",
+        )
