@@ -1,10 +1,14 @@
-from django.shortcuts import render
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 
 
-# Create your views here.
+def landing(request):
+    return render(request, "landing.html")
+
+
+@login_required
 def home(request):
     return render(request, "home.html")
 
@@ -18,4 +22,4 @@ def signup(request):
             return redirect("home")
     else:
         form = UserCreationForm()
-    return render(request, "registration/signup.html", {"form": form})
+        return render(request, "registration/signup.html", {"form": form})
