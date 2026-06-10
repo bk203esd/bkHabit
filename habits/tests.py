@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import resolve, reverse
+
+from . import views
 
 
 class AuthFlowTests(TestCase):
@@ -42,7 +44,8 @@ class AuthFlowTests(TestCase):
             follow=True,
         )
         self.assertRedirects(response, reverse("home"))
-        self.assertTrue(self.user_model.objects.filter(username="newuser").exists())
+        self.assertTrue(self.user_model.objects.filter(
+            username="newuser").exists())
         self.assertTrue(response.context["user"].is_authenticated)
 
     def test_logout_redirects_to_landing(self):
@@ -50,3 +53,49 @@ class AuthFlowTests(TestCase):
         response = self.client.post(reverse("logout"), follow=True)
         self.assertRedirects(response, reverse("landing"))
         self.assertFalse(response.context["user"].is_authenticated)
+
+
+class TemplateAndRouteContractTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="route_tester",
+            password="RoutePass123!",
+        )
+
+    def test_route_name_contract(self):
+        self.assertEqual(reverse("landing"), "/")
+        self.assertEqual(reverse("home"), "/home/")
+        self.assertEqual(reverse("signup"), "/signup/")
+        self.assertEqual(reverse("login"), "/accounts/login/")
+        self.assertEqual(reverse("logout"), "/accounts/logout/")
+
+    def test_views_resolution_contract(self):
+        self.assertEqual(resolve("/").func, views.landing)
+        self.assertEqual(resolve("/signup/").func, views.signup)
+
+        resolved_home = resolve("/home/").func
+        self.assertEqual(
+            getattr(resolved_home, "__name__", ""),
+            getattr(views.home, "__name__", ""),
+        )
+
+    def test_landing_uses_expected_template(self):
+        response = self.client.get(reverse("landing"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "landing.html")
+
+    def test_signup_get_uses_expected_template(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/signup.html")
+
+    def test_login_get_uses_expected_template(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/login.html")
+
+    def test_home_authenticated_uses_expected_template(self):
+        self.client.login(username="route_tester", password="RoutePass123!")
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "home.html")
