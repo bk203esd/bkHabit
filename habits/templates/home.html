@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Bienvenido a bkHabit</h1>
+
+{% if user.is_authenticated %}
+<p>Hola, {{ user.username }}. Ya estás autenticado.</p>
+<p>Tu siguiente paso será crear el CRUD de hábitos.</p>
+{% else %}
+<p>No has iniciado sesión.</p>
+<p>
+    <a href="{% url 'login' %}">Iniciar sesión</a> o
+    <a href="{% url 'signup' %}">crear cuenta</a>.
+</p>
+{% endif %}
+{% endblock %}

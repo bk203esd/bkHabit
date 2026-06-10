@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>bkHabit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        form p {
+            margin: 0.5rem 0;
+        }
+
+        .errors {
+            color: #b00020;
+            margin-bottom: 0.75rem;
+        }
+
+        button {
+            padding: 0.5rem 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav> <a href="{% url 'home' %}">Inicio</a>
+        {% if user.is_authenticated %}
+        <span class="muted">Sesión: {{ user.username }}</span>
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+        </form>
+        {% else %}
+        <a href="{% url 'login' %}">Iniciar sesión</a>
+        <a href="{% url 'signup' %}">Crear cuenta</a>
+        {% endif %}
+    </nav>
+
+    {% if messages %}
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+
+    <main class="card"> {% block content %}{% endblock %} </main>
+</body>
+
+</html>
