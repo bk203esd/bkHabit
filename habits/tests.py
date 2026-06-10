@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import resolve, reverse
 
 from . import views
+from .models import Habit
 
 
 class AuthFlowTests(TestCase):
@@ -44,8 +45,7 @@ class AuthFlowTests(TestCase):
             follow=True,
         )
         self.assertRedirects(response, reverse("home"))
-        self.assertTrue(self.user_model.objects.filter(
-            username="newuser").exists())
+        self.assertTrue(self.user_model.objects.filter(username="newuser").exists())
         self.assertTrue(response.context["user"].is_authenticated)
 
     def test_logout_redirects_to_landing(self):
@@ -68,6 +68,8 @@ class TemplateAndRouteContractTests(TestCase):
         self.assertEqual(reverse("signup"), "/signup/")
         self.assertEqual(reverse("login"), "/accounts/login/")
         self.assertEqual(reverse("logout"), "/accounts/logout/")
+        self.assertEqual(reverse("habits_list"), "/habits/")
+        self.assertEqual(reverse("habit_create"), "/habits/new/")
 
     def test_views_resolution_contract(self):
         self.assertEqual(resolve("/").func, views.landing)
@@ -99,3 +101,103 @@ class TemplateAndRouteContractTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "home.html")
+
+
+class HabitCrudTests(TestCase):
+    def setUp(self):
+        self.user_model = get_user_model()
+        self.password = "HabitPass123!"
+        self.user = self.user_model.objects.create_user(
+            username="habit_owner",
+            password=self.password,
+        )
+        self.other_user = self.user_model.objects.create_user(
+            username="other_owner",
+            password=self.password,
+        )
+
+    def login_main_user(self):
+        self.client.login(username="habit_owner", password=self.password)
+
+    def test_create_habit_assigns_current_user_as_owner(self):
+        self.login_main_user()
+
+        response = self.client.post(
+            reverse("habit_create"),
+            {
+                "name": "Leer 20 minutos",
+                "description": "Lectura nocturna",
+                "frequency": Habit.Frequency.DAILY,
+                "is_active": True,
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("habits_list"))
+        habit = Habit.objects.get(name="Leer 20 minutos")
+        self.assertEqual(habit.owner, self.user)
+
+    def test_list_shows_only_current_user_habits(self):
+        Habit.objects.create(
+            owner=self.user,
+            name="Habito propio",
+            frequency=Habit.Frequency.DAILY,
+        )
+        Habit.objects.create(
+            owner=self.other_user,
+            name="Habito ajeno",
+            frequency=Habit.Frequency.WEEKLY,
+        )
+
+        self.login_main_user()
+        response = self.client.get(reverse("habits_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Habito propio")
+        self.assertNotContains(response, "Habito ajeno")
+
+    def test_user_cannot_edit_other_user_habit(self):
+        foreign_habit = Habit.objects.create(
+            owner=self.other_user,
+            name="Privado",
+            frequency=Habit.Frequency.DAILY,
+        )
+
+        self.login_main_user()
+        response = self.client.post(
+            reverse("habit_update", args=[foreign_habit.pk]),
+            {"name": "Hack", "description": "", "frequency": Habit.Frequency.DAILY, "is_active": True},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_cannot_delete_other_user_habit(self):
+        foreign_habit = Habit.objects.create(
+            owner=self.other_user,
+            name="No borrar",
+            frequency=Habit.Frequency.DAILY,
+        )
+
+        self.login_main_user()
+        response = self.client.post(reverse("habit_delete", args=[foreign_habit.pk]))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_update_own_habit(self):
+        own_habit = Habit.objects.create(
+            owner=self.user,
+            name="Original",
+            frequency=Habit.Frequency.DAILY,
+        )
+
+        self.login_main_user()
+        response = self.client.post(
+            reverse("habit_update", args=[own_habit.pk]),
+            {"name": "Actualizado", "description": "ok", "frequency": Habit.Frequency.WEEKLY, "is_active": True},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("habits_list"))
+        own_habit.refresh_from_db()
+        self.assertEqual(own_habit.name, "Actualizado")
+        self.assertEqual(own_habit.frequency, Habit.Frequency.WEEKLY)

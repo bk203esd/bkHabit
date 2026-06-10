@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Mis habitos | bkHabit{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Mis habitos</h1>
+    <a href="{% url 'habit_create' %}" class="btn btn-primary">Nuevo habito</a>
+</div>
+
+{% if habits %}
+<div class="row g-3">
+    {% for habit in habits %}
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">{{ habit.name }}</h2>
+                <p class="text-secondary mb-2">
+                    Frecuencia: {{ habit.get_frequency_display }}
+                    {% if habit.is_active %}
+                    <span class="badge text-bg-success ms-2">Activo</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary ms-2">Pausado</span>
+                    {% endif %}
+                </p>
+                {% if habit.description %}
+                <p class="mb-3">{{ habit.description }}</p>
+                {% endif %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'habit_update' habit.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    <a href="{% url 'habit_delete' habit.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <p class="mb-0">Aun no tienes habitos. Crea el primero.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

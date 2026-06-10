@@ -9,9 +9,8 @@
       <div class="card-body p-4">
         <h1 class="h3 mb-3">Tu panel</h1>
         <p class="mb-2">Hola, <strong>{{ user.username }}</strong>.</p>
-        <p class="text-secondary mb-0">
-          El siguiente paso es crear el módulo CRUD de hábitos y el seguimiento diario.
-        </p>
+        <p class="text-secondary mb-3">Tienes {{ habits_count }} habitos registrados.</p>
+        <a class="btn btn-primary" href="{% url 'habits_list' %}">Ir a mis habitos</a>
       </div>
     </div>
   </div>
