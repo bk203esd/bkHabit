@@ -1,9 +1,12 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import resolve, reverse
+from django.utils import timezone
 
 from . import views
-from .models import Habit
+from .models import Habit, HabitCheckin
 
 
 class AuthFlowTests(TestCase):
@@ -45,7 +48,8 @@ class AuthFlowTests(TestCase):
             follow=True,
         )
         self.assertRedirects(response, reverse("home"))
-        self.assertTrue(self.user_model.objects.filter(username="newuser").exists())
+        self.assertTrue(self.user_model.objects.filter(
+            username="newuser").exists())
         self.assertTrue(response.context["user"].is_authenticated)
 
     def test_logout_redirects_to_landing(self):
@@ -166,7 +170,8 @@ class HabitCrudTests(TestCase):
         self.login_main_user()
         response = self.client.post(
             reverse("habit_update", args=[foreign_habit.pk]),
-            {"name": "Hack", "description": "", "frequency": Habit.Frequency.DAILY, "is_active": True},
+            {"name": "Hack", "description": "",
+                "frequency": Habit.Frequency.DAILY, "is_active": True},
         )
 
         self.assertEqual(response.status_code, 404)
@@ -179,7 +184,8 @@ class HabitCrudTests(TestCase):
         )
 
         self.login_main_user()
-        response = self.client.post(reverse("habit_delete", args=[foreign_habit.pk]))
+        response = self.client.post(
+            reverse("habit_delete", args=[foreign_habit.pk]))
 
         self.assertEqual(response.status_code, 404)
 
@@ -193,7 +199,8 @@ class HabitCrudTests(TestCase):
         self.login_main_user()
         response = self.client.post(
             reverse("habit_update", args=[own_habit.pk]),
-            {"name": "Actualizado", "description": "ok", "frequency": Habit.Frequency.WEEKLY, "is_active": True},
+            {"name": "Actualizado", "description": "ok",
+                "frequency": Habit.Frequency.WEEKLY, "is_active": True},
             follow=True,
         )
 
@@ -201,3 +208,96 @@ class HabitCrudTests(TestCase):
         own_habit.refresh_from_db()
         self.assertEqual(own_habit.name, "Actualizado")
         self.assertEqual(own_habit.frequency, Habit.Frequency.WEEKLY)
+
+
+class HabitTrackingTests(TestCase):
+    def setUp(self):
+        self.password = "TrackPass123!"
+        self.user = get_user_model().objects.create_user(
+            username="tracker",
+            password=self.password,
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username="tracker_other",
+            password=self.password,
+        )
+
+    def login_user(self):
+        self.client.login(username="tracker", password=self.password)
+
+    def test_daily_streak_current_and_max(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Diario",
+            frequency=Habit.Frequency.DAILY,
+        )
+        today = timezone.localdate()
+
+        habit.register_checkin(today - timedelta(days=6))
+        habit.register_checkin(today - timedelta(days=5))
+        habit.register_checkin(today - timedelta(days=4))
+        habit.register_checkin(today - timedelta(days=1))
+        habit.register_checkin(today)
+
+        self.assertEqual(habit.streak_current(today), 2)
+        self.assertEqual(habit.streak_max(), 3)
+
+    def test_weekly_streak_current_and_max(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Semanal",
+            frequency=Habit.Frequency.WEEKLY,
+        )
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday())
+
+        habit.register_checkin(week_start)
+        habit.register_checkin(week_start - timedelta(days=7))
+        habit.register_checkin(week_start - timedelta(days=14))
+        habit.register_checkin(week_start - timedelta(days=35))
+
+        self.assertEqual(habit.streak_current(today), 3)
+        self.assertEqual(habit.streak_max(), 3)
+
+    def test_weekly_checkin_is_unique_per_week(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Semanal unico",
+            frequency=Habit.Frequency.WEEKLY,
+        )
+        today = timezone.localdate()
+
+        habit.register_checkin(today)
+        habit.register_checkin(today + timedelta(days=2))
+
+        self.assertEqual(HabitCheckin.objects.filter(habit=habit).count(), 1)
+
+    def test_toggle_endpoint_marks_and_unmarks(self):
+        habit = Habit.objects.create(
+            owner=self.user,
+            name="Toggle",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+
+        first = self.client.post(
+            reverse("habit_toggle_checkin", args=[habit.pk]), follow=True)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(HabitCheckin.objects.filter(habit=habit).count(), 1)
+
+        second = self.client.post(
+            reverse("habit_toggle_checkin", args=[habit.pk]), follow=True)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(HabitCheckin.objects.filter(habit=habit).count(), 0)
+
+    def test_user_cannot_toggle_other_user_habit(self):
+        foreign_habit = Habit.objects.create(
+            owner=self.other_user,
+            name="Ajeno",
+            frequency=Habit.Frequency.DAILY,
+        )
+        self.login_user()
+
+        response = self.client.post(
+            reverse("habit_toggle_checkin", args=[foreign_habit.pk]))
+        self.assertEqual(response.status_code, 404)

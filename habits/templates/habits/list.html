@@ -15,6 +15,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <h2 class="h5">{{ habit.name }}</h2>
+
                 <p class="text-secondary mb-2">
                     Frecuencia: {{ habit.get_frequency_display }}
                     {% if habit.is_active %}
@@ -23,9 +24,33 @@
                     <span class="badge text-bg-secondary ms-2">Pausado</span>
                     {% endif %}
                 </p>
+
                 {% if habit.description %}
                 <p class="mb-3">{{ habit.description }}</p>
                 {% endif %}
+
+                {% if habit.is_active %}
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    {% if habit.is_checked %}
+                    <span class="badge text-bg-success">Completado {{ habit.period_label }}</span>
+                    {% else %}
+                    <span class="badge text-bg-warning">Pendiente {{ habit.period_label }}</span>
+                    {% endif %}
+
+                    <span class="badge text-bg-primary">Racha actual: {{ habit.current_streak }}</span>
+                    <span class="badge text-bg-dark">Racha maxima: {{ habit.max_streak }}</span>
+                </div>
+
+                <form method="post" action="{% url 'habit_toggle_checkin' habit.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    {% if habit.is_checked %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Desmarcar periodo</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-sm btn-success">Marcar como completado</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+
                 <div class="d-flex gap-2">
                     <a href="{% url 'habit_update' habit.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
                     <a href="{% url 'habit_delete' habit.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>

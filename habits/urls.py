@@ -10,4 +10,6 @@ urlpatterns = [
     path("habits/new/", views.habit_create, name="habit_create"),
     path("habits/<int:pk>/edit/", views.habit_update, name="habit_update"),
     path("habits/<int:pk>/delete/", views.habit_delete, name="habit_delete"),
+    path("habits/<int:pk>/checkin/", views.habit_toggle_checkin,
+         name="habit_toggle_checkin"),
 ]
