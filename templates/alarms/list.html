@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Alarms — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>Alarms</h1>
+      <p class="muted">Browser notifications fire while DayFlow is open in a tab.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'alarm_create' %}">New alarm</a>
+  </div>
+
+  <section class="panel">
+    <ul class="list-plain">
+      {% for item in alarms %}
+        <li>
+          <div>
+            <strong>{{ item.alarm.title }}</strong>
+            <div class="muted">
+              {{ item.alarm.time|time:"H:i" }}
+              · {{ item.alarm.get_mode_display }}
+              {% if item.alarm.mode == "once" %}
+                · {{ item.alarm.once_date|date:"M j, Y" }}
+              {% else %}
+                · {{ item.days|join:", " }}
+              {% endif %}
+              {% if not item.alarm.enabled %} · disabled{% endif %}
+            </div>
+          </div>
+          <div class="view-switch">
+            <form method="post" action="{% url 'alarm_toggle' item.alarm.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button class="btn btn-ghost" type="submit">{% if item.alarm.enabled %}Disable{% else %}Enable{% endif %}</button>
+            </form>
+            <a class="btn btn-ghost" href="{% url 'alarm_edit' item.alarm.pk %}">Edit</a>
+            <form method="post" action="{% url 'alarm_delete' item.alarm.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
+          </div>
+        </li>
+      {% empty %}
+        <li class="empty">No alarms yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</main>
+{% endblock %}

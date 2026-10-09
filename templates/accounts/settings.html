@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>Settings</h1>
+      <p class="muted">Theme and timezone for your DayFlow account.</p>
+    </div>
+  </div>
+  <div class="panel" style="max-width:520px">
+    <form method="post" class="stack">
+      {% csrf_token %}
+      {% for field in form %}
+        <label>
+          {{ field.label }}
+          {{ field }}
+          {{ field.errors }}
+        </label>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Save preferences</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

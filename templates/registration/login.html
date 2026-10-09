@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in — DayFlow{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <div class="panel auth-panel">
+    <h1>Sign in</h1>
+    <p class="muted">Welcome back to DayFlow.</p>
+    <form method="post" class="stack" style="margin-top:1rem">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <label>
+        Username
+        {{ form.username }}
+      </label>
+      <label>
+        Password
+        {{ form.password }}
+      </label>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+    <p class="muted" style="margin-top:1rem">Need an account? <a href="{% url 'register' %}">Register</a></p>
+  </div>
+</div>
+{% endblock %}

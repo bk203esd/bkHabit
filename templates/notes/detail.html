@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>{{ note.title }}</h1>
+      <p class="muted">
+        {% if note.folder %}{{ note.folder.name }} · {% endif %}
+        Updated {{ note.updated_at|date:"M j, Y H:i" }}
+        {% if note.is_pinned %} · Pinned{% endif %}
+      </p>
+      <div>
+        {% for tag in note.tags.all %}
+          <span class="tag">#{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="view-switch">
+      <form method="post" action="{% url 'note_toggle_pin' note.pk %}" class="inline-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'note_detail' note.pk %}">
+        <button class="btn btn-ghost" type="submit">{% if note.is_pinned %}Unpin{% else %}Pin{% endif %}</button>
+      </form>
+      <a class="btn btn-ghost" href="{% url 'note_edit' note.pk %}">Edit</a>
+      <form method="post" action="{% url 'note_delete' note.pk %}" class="inline-form">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <article class="panel markdown-body">
+    {{ rendered|safe }}
+  </article>
+</main>
+{% endblock %}

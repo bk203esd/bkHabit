@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="muted">Timed or all-day events, with optional recurrence.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'calendar' %}">Back to calendar</a>
+  </div>
+
+  <div class="panel" style="max-width:640px">
+    <form method="post" class="stack">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <label>Title {{ form.title }} {{ form.title.errors }}</label>
+      <label>Description {{ form.description }} {{ form.description.errors }}</label>
+      <label>Start {{ form.start }} {{ form.start.errors }}</label>
+      <label>End {{ form.end }} {{ form.end.errors }}</label>
+      <label class="checkbox-row"><span>All day</span> {{ form.all_day }}</label>
+      <label>Recurrence {{ form.recurrence_type }} {{ form.recurrence_type.errors }}</label>
+      <div>
+        <div style="font-weight:700;margin-bottom:.35rem">Repeat on</div>
+        <div class="checkbox-row">{{ form.weekdays }}</div>
+        {{ form.weekdays.errors }}
+      </div>
+      <label>Repeat until {{ form.recurrence_until }} {{ form.recurrence_until.errors }}</label>
+      <div class="view-switch">
+        <button class="btn btn-primary" type="submit">Save</button>
+        {% if event %}
+          <button class="btn btn-danger" form="delete-form" type="submit">Delete</button>
+        {% endif %}
+      </div>
+    </form>
+    {% if event %}
+      <form id="delete-form" method="post" action="{% url 'event_delete' event.pk %}">
+        {% csrf_token %}
+      </form>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

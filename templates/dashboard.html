@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="muted">A quick look at what is ahead.</p>
+    </div>
+    <div class="view-switch">
+      <a class="btn btn-ghost" href="{% url 'event_create' %}">New event</a>
+      <a class="btn btn-ghost" href="{% url 'alarm_create' %}">New alarm</a>
+      <a class="btn btn-primary" href="{% url 'note_create' %}">New note</a>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <section class="panel">
+      <h2>Upcoming events</h2>
+      <ul class="list-plain">
+        {% for event in upcoming_events %}
+          <li>
+            <span>{{ event.title }}</span>
+            <span class="muted">{{ event.start|date:"M j, H:i" }}</span>
+          </li>
+        {% empty %}
+          <li class="empty">No upcoming events.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Active alarms</h2>
+      <ul class="list-plain">
+        {% for alarm in active_alarms %}
+          <li>
+            <span>{{ alarm.title }}</span>
+            <span class="muted">{{ alarm.time|time:"H:i" }}</span>
+          </li>
+        {% empty %}
+          <li class="empty">No active alarms.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Pinned notes</h2>
+      <ul class="list-plain">
+        {% for note in pinned_notes %}
+          <li>
+            <a href="{% url 'note_detail' note.pk %}">{{ note.title }}</a>
+            <span class="muted">{{ note.updated_at|date:"M j" }}</span>
+          </li>
+        {% empty %}
+          <li class="empty">No pinned notes.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</main>
+{% endblock %}
