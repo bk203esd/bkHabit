@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Notes — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>Notes</h1>
+      <p class="muted">Markdown notes with folders, tags, and pins.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'note_create' %}">New note</a>
+  </div>
+
+  <div class="note-layout">
+    <aside class="panel stack">
+      <form method="get">
+        <label>
+          Search
+          <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Search notes">
+        </label>
+      </form>
+
+      <div class="side-nav">
+        <strong>Folders</strong>
+        <a href="{% url 'note_list' %}" class="{% if not active_folder %}is-active{% endif %}">All notes</a>
+        <a href="?folder=none" class="{% if active_folder == 'none' %}is-active{% endif %}">No folder</a>
+        {% for folder in folders %}
+          <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center">
+            <a href="?folder={{ folder.pk }}" class="{% if active_folder == folder.pk|stringformat:'s' %}is-active{% endif %}">{{ folder.name }}</a>
+            <form method="post" action="{% url 'folder_delete' folder.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button class="btn btn-ghost" type="submit" title="Delete folder">×</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="{% url 'folder_create' %}" class="stack">
+        {% csrf_token %}
+        <label>New folder {{ folder_form.name }}</label>
+        <button class="btn btn-ghost" type="submit">Add folder</button>
+      </form>
+
+      <div class="side-nav">
+        <strong>Tags</strong>
+        {% for tag in tags %}
+          <a href="?tag={{ tag.pk }}" class="{% if active_tag == tag.pk|stringformat:'s' %}is-active{% endif %}">#{{ tag.name }}</a>
+        {% empty %}
+          <span class="muted">No tags yet</span>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section class="panel">
+      {% for note in notes %}
+        <article class="note-item">
+          <h3>
+            <a href="{% url 'note_detail' note.pk %}">{{ note.title }}</a>
+            {% if note.is_pinned %}<span class="tag">Pinned</span>{% endif %}
+          </h3>
+          <div class="muted">
+            {% if note.folder %}{{ note.folder.name }} · {% endif %}
+            Updated {{ note.updated_at|date:"M j, Y H:i" }}
+          </div>
+          {% for tag in note.tags.all %}
+            <span class="tag">#{{ tag.name }}</span>
+          {% endfor %}
+        </article>
+      {% empty %}
+        <p class="empty">No notes match this view.</p>
+      {% endfor %}
+    </section>
+  </div>
+</main>
+{% endblock %}

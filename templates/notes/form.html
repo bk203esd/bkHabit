@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="muted">Markdown supported: headings, lists, bold, italic, links, and code.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'note_list' %}">Back</a>
+  </div>
+
+  <div class="panel" style="max-width:760px">
+    <form method="post" class="stack">
+      {% csrf_token %}
+      <label>Title {{ form.title }} {{ form.title.errors }}</label>
+      <label>Content {{ form.content }} {{ form.content.errors }}</label>
+      <label>Folder {{ form.folder }} {{ form.folder.errors }}</label>
+      <label>Tags {{ form.tag_names }} <span class="helptext">{{ form.tag_names.help_text }}</span></label>
+      <label class="checkbox-row"><span>Pinned</span> {{ form.is_pinned }}</label>
+      <button class="btn btn-primary" type="submit">Save note</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

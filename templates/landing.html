@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}DayFlow — Your day, calmly organized{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-brand">DayFlow</p>
+    <h2>Your calendar, alarms, and notes — in one quiet place.</h2>
+    <p>Plan the day, set reminders that reach your browser, and keep notes with the structure you need. Each account stays private.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{% url 'register' %}">Create account</a>
+      <a class="btn btn-ghost" href="{% url 'login' %}">Sign in</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

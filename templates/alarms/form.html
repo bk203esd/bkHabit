@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="muted">One-time alarms are removed after they fire. Weekly alarms repeat on selected days.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'alarm_list' %}">Back</a>
+  </div>
+
+  <div class="panel" style="max-width:560px">
+    <form method="post" class="stack">
+      {% csrf_token %}
+      <label>Title {{ form.title }} {{ form.title.errors }}</label>
+      <label>Time {{ form.time }} {{ form.time.errors }}</label>
+      <label>Mode {{ form.mode }} {{ form.mode.errors }}</label>
+      <label>One-time date {{ form.once_date }} {{ form.once_date.errors }}</label>
+      <div>
+        <div style="font-weight:700;margin-bottom:.35rem">Weekly days</div>
+        <div class="checkbox-row">{{ form.weekdays }}</div>
+        {{ form.weekdays.errors }}
+      </div>
+      <label class="checkbox-row"><span>Enabled</span> {{ form.enabled }}</label>
+      <button class="btn btn-primary" type="submit">Save</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

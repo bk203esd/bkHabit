@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar — DayFlow{% endblock %}
+
+{% block content %}
+<main class="page">
+  <div class="section-head">
+    <div>
+      <h1>Calendar</h1>
+      <p class="muted">Switch between month, week, and day views.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'event_create' %}?date={{ anchor|date:'Y-m-d' }}">New event</a>
+  </div>
+
+  <div class="calendar-toolbar panel">
+    <div class="view-switch">
+      <a class="chip {% if view_mode == 'month' %}is-active{% endif %}" href="?view=month&date={{ anchor|date:'Y-m-d' }}">Month</a>
+      <a class="chip {% if view_mode == 'week' %}is-active{% endif %}" href="?view=week&date={{ anchor|date:'Y-m-d' }}">Week</a>
+      <a class="chip {% if view_mode == 'day' %}is-active{% endif %}" href="?view=day&date={{ anchor|date:'Y-m-d' }}">Day</a>
+    </div>
+    <div class="view-switch">
+      <a class="btn btn-ghost" href="?view={{ view_mode }}&date={{ prev_date|date:'Y-m-d' }}">Previous</a>
+      <strong>
+        {% if view_mode == "day" %}
+          {{ anchor|date:"l, F j, Y" }}
+        {% else %}
+          {{ anchor|date:"F Y" }}
+        {% endif %}
+      </strong>
+      <a class="btn btn-ghost" href="?view={{ view_mode }}&date={{ next_date|date:'Y-m-d' }}">Next</a>
+    </div>
+  </div>
+
+  {% if view_mode == "month" %}
+    <div class="month-grid">
+      <div class="weekday">Mon</div>
+      <div class="weekday">Tue</div>
+      <div class="weekday">Wed</div>
+      <div class="weekday">Thu</div>
+      <div class="weekday">Fri</div>
+      <div class="weekday">Sat</div>
+      <div class="weekday">Sun</div>
+      {% for week in weeks %}
+        {% for cell in week %}
+          <div class="day-cell {% if not cell.in_month %}out{% endif %}">
+            <a class="date-num" href="?view=day&date={{ cell.date|date:'Y-m-d' }}">{{ cell.date.day }}</a>
+            {% for event in cell.events %}
+              <a class="event-pill" href="{% url 'event_edit' event.pk %}">{{ event.title }}</a>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+  {% elif view_mode == "week" %}
+    <div class="week-grid">
+      {% for cell in days %}
+        <div class="week-day">
+          <a href="?view=day&date={{ cell.date|date:'Y-m-d' }}"><strong>{{ cell.date|date:"D j" }}</strong></a>
+          <ul class="list-plain">
+            {% for event in cell.events %}
+              <li>
+                <a href="{% url 'event_edit' event.pk %}">{{ event.title }}</a>
+                <span class="muted">{% if event.all_day %}All day{% else %}{{ event.start|time:"H:i" }}{% endif %}</span>
+              </li>
+            {% empty %}
+              <li class="empty">No events</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <section class="day-agenda panel">
+      <ul class="list-plain">
+        {% for item in day_events %}
+          <li>
+            <div>
+              <a href="{% url 'event_edit' item.event.pk %}"><strong>{{ item.event.title }}</strong></a>
+              {% if item.event.description %}<div class="muted">{{ item.event.description|truncatechars:120 }}</div>{% endif %}
+            </div>
+            <span class="muted">
+              {% if item.event.all_day %}
+                All day
+              {% else %}
+                {{ item.start|time:"H:i" }} – {{ item.end|time:"H:i" }}
+              {% endif %}
+            </span>
+          </li>
+        {% empty %}
+          <li class="empty">Nothing scheduled for this day.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

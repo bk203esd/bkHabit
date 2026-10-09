@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Register — DayFlow{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <div class="panel auth-panel">
+    <h1>Create account</h1>
+    <p class="muted">After registering, a superuser must approve your access.</p>
+    <form method="post" class="stack" style="margin-top:1rem">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+        <label>
+          {{ field.label }}
+          {{ field }}
+          {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+          {{ field.errors }}
+        </label>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Submit registration</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
